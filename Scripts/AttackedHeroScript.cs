@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class AttackedHeroScript : MonoBehaviour, IDropHandler
 {
@@ -13,6 +14,7 @@ public class AttackedHeroScript : MonoBehaviour, IDropHandler
 
     public HeroType Type;
     public GameManagerScript GameManager;
+    public Color NormalCol, TurgetCol;
 
     public void OnDrop(PointerEventData eventData)
     {
@@ -26,6 +28,11 @@ public class AttackedHeroScript : MonoBehaviour, IDropHandler
             card.SelfCard.CanAttack = false;
             GameManager.DamageHero(card, true);
         }
+    }
+
+    public void HighlightHero(bool highlite)
+    {
+        GetComponent<Image>().color = highlite ? TurgetCol : NormalCol;
     }
 
 }

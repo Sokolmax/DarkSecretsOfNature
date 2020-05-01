@@ -33,6 +33,7 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
 
             card.GetComponent<CardInfoScript>().SelfCard.IsPlaced = true;
             card.GameManager.ReduceEnergy(true, card.GetComponent<CardInfoScript>().SelfCard.Cost);//отнимание маны
+            card.GameManager.CheckCardsForAvailability();
         }
     }
 

@@ -46,7 +46,9 @@ public class GameManagerScript : MonoBehaviour
     public int PlayerHP, EnemyHP;
     public Text PlayerHPTxt, EnemyHPTxt;
 
-    public GameObject VinGO, LoseGO;
+    public GameObject EndBg, VinGO, LoseGO;
+
+    public AttackedHeroScript EnemyHero, PlayerHero;
 
     public List<CardInfoScript> PlayerHandCards = new List<CardInfoScript>(),
                                 PlayerFieldCards = new List<CardInfoScript>(),
@@ -72,9 +74,10 @@ public class GameManagerScript : MonoBehaviour
         ShowEnergy();
         ShowHP();
 
+        EndBg.SetActive(false);
         VinGO.SetActive(false);
         LoseGO.SetActive(false);
-
+        
         StartCoroutine(TurnFunk());
     }
 
@@ -109,7 +112,7 @@ public class GameManagerScript : MonoBehaviour
         deck.RemoveAt(0);
     }
 
-    IEnumerator TurnFunk() // таймер хода
+    IEnumerator TurnFunk() // карутина хода
     {
         TurnTime = 25;
         TurnTimeText.text = TurnTime.ToString();
@@ -117,6 +120,7 @@ public class GameManagerScript : MonoBehaviour
         foreach(var card in PlayerFieldCards)
             card.DeHighlightCard();
 
+        CheckCardsForAvailability();
 
         if(IsPlayerTurn)//ход игрока
         {
@@ -131,37 +135,39 @@ public class GameManagerScript : MonoBehaviour
                 TurnTimeText.text = TurnTime.ToString();
                 yield return new WaitForSeconds(1);
             }
+            ChangeTurn();
         }
         else//ход противника
         {
             foreach(var card in EnemyFieldCards)
                 card.SelfCard.ChangeAttackState(true);
 
-            while(TurnTime-- > 20)
-            {
-                TurnTimeText.text = TurnTime.ToString();
-                yield return new WaitForSeconds(1);
-            }
 
-            if(EnemyHandCards.Count > 0)
-                EnemyTurn(EnemyHandCards);
+            StartCoroutine(EnemyTurn(EnemyHandCards));
         }
-        ChangeTurn();
+        
     }
 
-    void EnemyTurn(List<CardInfoScript> cards)
+    IEnumerator EnemyTurn(List<CardInfoScript> cards)
     {
+        yield return new WaitForSeconds(1);
+
         int count = Random.Range(0, cards.Count + 1);
 
         for(int i = 0; i < count; i++) //выставление карт соперником для проверки
         {
-            if (EnemyFieldCards.Count > 5/*баг с выкладыванием бльшего кол-ва карт*/ || EnemyEnergy == 0)
+            if (EnemyFieldCards.Count > 5/*баг с выкладыванием бльшего кол-ва карт*/ || EnemyEnergy == 0
+                || EnemyHandCards.Count == 0)
                 break;
 
             List<CardInfoScript> cardsList = cards.FindAll(x => EnemyEnergy >= x.SelfCard.Cost); //карты с подходящей ценой в руке
 
             if(cardsList.Count == 0)
                 break;
+
+            cardsList[0].GetComponent<CardMovementScript>().MoveToField(EnemyField);
+
+            yield  return new WaitForSeconds(0.51f);
 
             ReduceEnergy(false, cardsList[0].SelfCard.Cost);
 
@@ -172,6 +178,8 @@ public class GameManagerScript : MonoBehaviour
             EnemyHandCards.Remove(cardsList[0]);
         }
 
+        yield  return new WaitForSeconds(1);
+
         foreach(var activeCard in EnemyFieldCards.FindAll(x => x.SelfCard.CanAttack)) // атака соперником для проверки
         {
             if(Random.Range(0, 2) == 0 && PlayerFieldCards.Count > 0)
@@ -181,14 +189,25 @@ public class GameManagerScript : MonoBehaviour
                 Debug.Log(activeCard.SelfCard.Name);
 
                 activeCard.SelfCard.ChangeAttackState(false);
+
+                activeCard.GetComponent<CardMovementScript>().MoveToTurget(enemy.transform);
+                yield return new WaitForSeconds(.75f);
+
                 CardsFight(enemy, activeCard);
             }
             else
             {
                 activeCard.SelfCard.ChangeAttackState(false);
+
+                activeCard.GetComponent<CardMovementScript>().MoveToTurget(PlayerHero.transform);
+                yield return new WaitForSeconds(.75f);
+
                 DamageHero(activeCard, false);
             }
+            yield return new WaitForSeconds(.2f);
         }
+        yield return new WaitForSeconds(1);
+        ChangeTurn();
     }
 
     public void ChangeTurn() //смена хода
@@ -290,12 +309,30 @@ public class GameManagerScript : MonoBehaviour
         if(EnemyHP <= 0)
         {
             VinGO.SetActive(true);
+            EndBg.SetActive(true);
+            
             StopAllCoroutines();
         }
         else if(PlayerHP <= 0)
         {
+            EndBg.SetActive(true);
             LoseGO.SetActive(true);
             StopAllCoroutines();
         }
+    }
+
+    public void CheckCardsForAvailability() //прозрачность карт
+    {
+        foreach(var card in PlayerHandCards)
+            card.CheckForAvailability(PlayerEnergy);
+    }
+
+    public void HighlightTargets(bool highlight)// подсветка карт для атаки
+    {
+        foreach(var card in EnemyFieldCards)
+            card.HighlightAsTarget(highlight);
+
+        EnemyHero.HighlightHero(highlight);
+        
     }
 }

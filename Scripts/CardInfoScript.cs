@@ -12,6 +12,7 @@ public class CardInfoScript : MonoBehaviour
     public TextMeshProUGUI Cost;
     public GameObject HideObj, HighlitedObj;
     public bool IsPlayer;
+    //public Color NormalCol, TargetCol;
 
     public void HideCardInfo(Card card) //скрытие руки соперника
     {
@@ -51,5 +52,15 @@ public class CardInfoScript : MonoBehaviour
     public void DeHighlightCard() // отключение подсветки
     {
         HighlitedObj.SetActive(false);
+    }
+
+    public void CheckForAvailability(int currentEnergy)//прозрачность карт, которые нельзя разыграть
+    {
+        GetComponent<CanvasGroup>().alpha = currentEnergy >= SelfCard.Cost ? 1: 0.7f; 
+    }
+
+    public void HighlightAsTarget(bool highlite)// подсветка карт для атаки
+    {
+        HighlitedObj.SetActive(highlite);
     }
 }

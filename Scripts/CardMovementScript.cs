@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using DG.Tweening;
+using UnityEngine.UI;
 
 public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -25,12 +27,23 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
 
         DefaultParent = DefaultTempCardParent = transform.parent;
 
-        IsDraggable = (DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_HAND ||
+        IsDraggable = GameManager.IsPlayerTurn && 
+                      (
+                      (DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_HAND 
+                      && GameManager.PlayerEnergy >= GetComponent<CardInfoScript>().SelfCard.Cost)
+                      || (DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_FIELD
+                      && GetComponent<CardInfoScript>().SelfCard.CanAttack)
+                      );
+        
+                    /*(DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_HAND ||
                       DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_FIELD)
-                      && GameManager.IsPlayerTurn;
+                      && GameManager.IsPlayerTurn;*/
 
         if(!IsDraggable)
             return;
+
+        if(GetComponent<CardInfoScript>().SelfCard.CanAttack)
+            GameManager.HighlightTargets(true);
         
         TempCardGO.transform.SetParent(DefaultParent);
         TempCardGO.transform.SetSiblingIndex(transform.GetSiblingIndex());
@@ -58,6 +71,8 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
     {
         if(!IsDraggable)
             return;
+
+         GameManager.HighlightTargets(false);
 
         transform.SetParent(DefaultParent);
         GetComponent<CanvasGroup>().blocksRaycasts = true;
@@ -90,4 +105,37 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
         TempCardGO.transform.SetSiblingIndex(newIndex);
     }
 
+    public void MoveToField(Transform field)//плавный розыгрыш карты
+    {
+        transform.SetParent(GameObject.Find("Canvas").transform);
+        transform.DOMove(field.position, .5f);
+    }
+
+    public void MoveToTurget(Transform target)// плавное перемещение карты
+    {
+        StartCoroutine(MoveToTurgetCor(target));
+    }
+
+    IEnumerator MoveToTurgetCor(Transform target)
+    {
+        Vector3 pos = transform.position;
+        Transform parent = transform.parent;
+        int index = transform.GetSiblingIndex();
+
+        transform.parent.GetComponent<HorizontalLayoutGroup>().enabled = false;
+
+        transform.SetParent(GameObject.Find("Canvas").transform);
+
+        transform.DOMove(target.position, .25f);
+
+        yield return new WaitForSeconds(.25f);
+
+        transform.DOMove(pos, .25f);
+
+        yield return new WaitForSeconds(.25f);
+
+        transform.SetParent(parent);
+        transform.SetSiblingIndex(index);
+        transform.parent.GetComponent<HorizontalLayoutGroup>().enabled = true;
+    }
 }
