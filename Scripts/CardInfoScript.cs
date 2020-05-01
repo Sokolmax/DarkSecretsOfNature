@@ -9,6 +9,7 @@ public class CardInfoScript : MonoBehaviour
     public Card SelfCard;
     public Image Logo;
     public Text Name, Attack, Helth;
+    public TextMeshProUGUI Cost;
     public GameObject HideObj, HighlitedObj;
     public bool IsPlayer;
 
@@ -16,6 +17,9 @@ public class CardInfoScript : MonoBehaviour
     {
         SelfCard = card;
         HideObj.SetActive(true);
+        Helth.text = "";
+        Attack.text = "";
+        Cost.text = "";
         IsPlayer = false;
     }
 
@@ -28,16 +32,15 @@ public class CardInfoScript : MonoBehaviour
         Logo.sprite = card.Logo;
         Logo.preserveAspect = true;
         Name.text = card.Name;
-        RefreshData();
 
-        //if(card.CanAttack)
-        //    HighlightCard();
+        RefreshData();
     }
 
     public void RefreshData()
     {
         Attack.text = SelfCard.Attack.ToString();
         Helth.text = SelfCard.Helth.ToString();
+        Cost.text = SelfCard.Cost.ToString();
     }
 
     public void HighlightCard() // включение подсветки

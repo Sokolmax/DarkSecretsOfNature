@@ -7,6 +7,9 @@ public class AttackedCardScript : MonoBehaviour, IDropHandler
 {
     public void OnDrop(PointerEventData eventData)
     {
+        if(!GetComponent<CardMovementScript>().GameManager.IsPlayerTurn)
+            return;
+
         CardInfoScript card = eventData.pointerDrag.GetComponent<CardInfoScript>(); // атакующая карта
 
         if(card && card.SelfCard.CanAttack 

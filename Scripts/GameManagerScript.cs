@@ -40,6 +40,14 @@ public class GameManagerScript : MonoBehaviour
     public Text TurnTimeText;
     public Button EndTurnBtn;
 
+    public int PlayerEnergy, EnemyEnergy;
+    public Text SelfEnergyTxt, EnemyEnergyTxt;
+
+    public int PlayerHP, EnemyHP;
+    public Text PlayerHPTxt, EnemyHPTxt;
+
+    public GameObject VinGO, LoseGO;
+
     public List<CardInfoScript> PlayerHandCards = new List<CardInfoScript>(),
                                 PlayerFieldCards = new List<CardInfoScript>(),
                                 EnemyHandCards = new List<CardInfoScript>(),
@@ -58,6 +66,14 @@ public class GameManagerScript : MonoBehaviour
 
         GiveHandCards(CurrentGame.EnemyDeck, EnemyHand);
         GiveHandCards(CurrentGame.PlayerDeck, PlayerHand);
+        PlayerEnergy = EnemyEnergy = 20;
+        PlayerHP = EnemyHP = 20000;
+
+        ShowEnergy();
+        ShowHP();
+
+        VinGO.SetActive(false);
+        LoseGO.SetActive(false);
 
         StartCoroutine(TurnFunk());
     }
@@ -135,31 +151,43 @@ public class GameManagerScript : MonoBehaviour
 
     void EnemyTurn(List<CardInfoScript> cards)
     {
-        if (EnemyFieldCards.Count > 5/*баг с выкладыванием бльшего кол-ва карт*/)
-            return;
-
         int count = Random.Range(0, cards.Count + 1);
 
         for(int i = 0; i < count; i++) //выставление карт соперником для проверки
         {
-            cards[0].ShowCardInfo(cards[0].SelfCard, false);
-            cards[0].transform.SetParent(EnemyField);
+            if (EnemyFieldCards.Count > 5/*баг с выкладыванием бльшего кол-ва карт*/ || EnemyEnergy == 0)
+                break;
 
-            EnemyFieldCards.Add(cards[0]);
-            EnemyHandCards.Remove(cards[0]);
+            List<CardInfoScript> cardsList = cards.FindAll(x => EnemyEnergy >= x.SelfCard.Cost); //карты с подходящей ценой в руке
+
+            if(cardsList.Count == 0)
+                break;
+
+            ReduceEnergy(false, cardsList[0].SelfCard.Cost);
+
+            cardsList[0].ShowCardInfo(cardsList[0].SelfCard, false);
+            cardsList[0].transform.SetParent(EnemyField);
+
+            EnemyFieldCards.Add(cardsList[0]);
+            EnemyHandCards.Remove(cardsList[0]);
         }
 
         foreach(var activeCard in EnemyFieldCards.FindAll(x => x.SelfCard.CanAttack)) // атака соперником для проверки
         {
-            if(PlayerFieldCards.Count == 0)
-                return;
-            
-            var enemy = PlayerFieldCards[Random.Range(0, PlayerFieldCards.Count)];
+            if(Random.Range(0, 2) == 0 && PlayerFieldCards.Count > 0)
+            {
+                var enemy = PlayerFieldCards[Random.Range(0, PlayerFieldCards.Count)];
 
-            Debug.Log(activeCard.SelfCard.Name);
+                Debug.Log(activeCard.SelfCard.Name);
 
-            activeCard.SelfCard.ChangeAttackState(false);
-            CardsFight(enemy, activeCard);
+                activeCard.SelfCard.ChangeAttackState(false);
+                CardsFight(enemy, activeCard);
+            }
+            else
+            {
+                activeCard.SelfCard.ChangeAttackState(false);
+                DamageHero(activeCard, false);
+            }
         }
     }
 
@@ -169,11 +197,23 @@ public class GameManagerScript : MonoBehaviour
         Turn++;
         EndTurnBtn.interactable = IsPlayerTurn;
 
-        if(IsPlayerTurn && PlayerHandCards.Count < 5/*макс. кол-во карт в руке*/)
-            GiveCardToHand(CurrentGame.PlayerDeck, PlayerHand);
-        else if (EnemyHandCards.Count < 5/*макс. кол-во карт в руке*/)
+        if(IsPlayerTurn)
+        {
+            PlayerEnergy += Turn/2*10;
+
+            if(PlayerHandCards.Count < 5/*макс. кол-во карт в руке*/)
+                GiveCardToHand(CurrentGame.PlayerDeck, PlayerHand);
+            
+        }
+        else
+        {
+            EnemyEnergy += Turn/2*10;
+
+            if(EnemyHandCards.Count < 5/*макс. кол-во карт в руке*/)
             GiveCardToHand(CurrentGame.EnemyDeck, EnemyHand);
-        
+        }
+        ShowEnergy();
+
         StartCoroutine(TurnFunk());
     }
 
@@ -209,5 +249,53 @@ public class GameManagerScript : MonoBehaviour
             EnemyFieldCards.Remove(card);
 
         Destroy(card.gameObject);
+    }
+
+    void ShowEnergy()
+    {
+        SelfEnergyTxt.text = PlayerEnergy.ToString();
+        EnemyEnergyTxt.text = EnemyEnergy.ToString();
+    }
+
+    void ShowHP()
+    {
+        PlayerHPTxt.text = PlayerHP.ToString();
+        EnemyHPTxt.text = EnemyHP.ToString();
+    }
+
+    public void ReduceEnergy(bool playerEnergy, int cost)
+    {
+        if(playerEnergy)
+            PlayerEnergy = Mathf.Clamp(PlayerEnergy - cost, 0, int.MaxValue);
+        else
+            EnemyEnergy = Mathf.Clamp(EnemyEnergy - cost, 0, int.MaxValue);
+
+        ShowEnergy();
+    }
+
+    public void DamageHero(CardInfoScript card, bool isEnemyAttacked)
+    {
+        if(isEnemyAttacked)
+            EnemyHP = Mathf.Clamp(EnemyHP - card.SelfCard.Attack, 0, int.MaxValue);
+        else
+            PlayerHP = Mathf.Clamp(PlayerHP - card.SelfCard.Attack, 0, int.MaxValue);
+        
+        ShowHP();
+        card.DeHighlightCard();
+        CheckForResult();
+    }
+
+    void CheckForResult()
+    {
+        if(EnemyHP <= 0)
+        {
+            VinGO.SetActive(true);
+            StopAllCoroutines();
+        }
+        else if(PlayerHP <= 0)
+        {
+            LoseGO.SetActive(true);
+            StopAllCoroutines();
+        }
     }
 }
