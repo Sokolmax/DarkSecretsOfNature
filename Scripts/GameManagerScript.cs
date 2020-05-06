@@ -136,6 +136,7 @@ public class GameManagerScript : MonoBehaviour
             {
                 card.thisCard.canAttack = true; //разрешить картам атаку
                 card.info.HighlightCard(true);
+                card.ability.OnNewTurn();
             }
 
             while(turnTime-- > 0)
@@ -148,7 +149,10 @@ public class GameManagerScript : MonoBehaviour
         else//ход противника
         {
             foreach(var card in enemyFieldCards)
+            {
                 card.thisCard.canAttack = true;
+                card.ability.OnNewTurn();
+            }
 
             StartCoroutine(EnemyTurn(enemyHandCards));
         }
@@ -176,7 +180,6 @@ public class GameManagerScript : MonoBehaviour
 
             yield  return new WaitForSeconds(0.51f);
 
-            cardsList[0].info.ShowCardInfo();
             cardsList[0].transform.SetParent(enemyField);
 
             cardsList[0].OnCast();
@@ -184,17 +187,25 @@ public class GameManagerScript : MonoBehaviour
 
         yield  return new WaitForSeconds(1);
 
-        foreach(var activeCard in enemyFieldCards.FindAll(x => x.thisCard.canAttack)) // атака соперником для проверки
+        while(enemyFieldCards.Exists(x => x.thisCard.canAttack)) // атака соперником для проверки
         {
-            if(Random.Range(0, 2) == 0 && playerFieldCards.Count > 0)
+            var activeCard = enemyFieldCards.FindAll(x => x.thisCard.canAttack)[0];
+            bool hasProvocation  = playerFieldCards.Exists(x => x.thisCard.isProvocation);
+
+            if(hasProvocation || Random.Range(0, 2) == 0 && playerFieldCards.Count > 0)
             {
-                var enemy = playerFieldCards[Random.Range(0, playerFieldCards.Count)];
+                CardControllerScript enemy;
+
+                if(hasProvocation)
+                    enemy = playerFieldCards.Find(x => x.thisCard.isProvocation);
+                else
+                    enemy = playerFieldCards[Random.Range(0, playerFieldCards.Count)];
 
                 //Debug.Log(activeCard.SelfCard.Name);
 
                 activeCard.thisCard.canAttack = false;
 
-                activeCard.GetComponent<CardMovementScript>().MoveToTurget(enemy.transform);
+                activeCard.movement.MoveToTurget(enemy.transform);
                 yield return new WaitForSeconds(.75f);
 
                 CardsFight(enemy, activeCard);
@@ -320,10 +331,18 @@ public class GameManagerScript : MonoBehaviour
 
     public void HighlightTargets(bool highlight)// подсветка карт для атаки
     {
-        foreach(var card in enemyFieldCards)
-            card.info.HighlightAsTarget(highlight);
+        List<CardControllerScript> targets = new List<CardControllerScript>();
 
-        enemyHero.HighlightHero(highlight);
+        if(enemyFieldCards.Exists(x => x.thisCard.isProvocation))
+            targets = enemyFieldCards.FindAll(x => x.thisCard.isProvocation);
+        else
+        {
+            targets = enemyFieldCards;
+            enemyHero.HighlightHero(highlight);
+        }
+
+        foreach(var card in targets)
+            card.info.HighlightAsTarget(highlight);
         
     }
 }

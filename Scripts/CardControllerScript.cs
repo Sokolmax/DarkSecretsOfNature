@@ -10,6 +10,7 @@ public class CardControllerScript : MonoBehaviour
 
     public CardInfoScript info;
     public CardMovementScript movement;
+    public CardAbility ability;
 
     GameManagerScript gameManager;
 
@@ -44,21 +45,30 @@ public class CardControllerScript : MonoBehaviour
             gameManager.enemyHandCards.Remove(this);
             gameManager.enemyFieldCards.Add(this);
             gameManager.ReduceEnergy(false, thisCard.cost);
+            info.ShowCardInfo();
         }
 
         thisCard.isPlaced = true;
 
+        if(thisCard.hasAbility)
+            ability.OnCast();
     }
 
     public void OnTakeDamage(CardControllerScript attacker = null)//получение урона
     {
+        if(thisCard.hasAbility)
+            ability.OnDamageTake();
         CheckForAlive();
     }
 
     public void OnDamageDeal()//нанесение урона
     {
+        thisCard.timesDealeDamage++;
         thisCard.canAttack = false;
         info.HighlightCard(false);
+
+        if(thisCard.hasAbility)
+            ability.OnDamageDeal();
     }
 
     public void CheckForAlive()

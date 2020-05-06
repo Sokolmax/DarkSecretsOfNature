@@ -23,7 +23,8 @@ public class AttackedHeroScript : MonoBehaviour, IDropHandler
         
         CardControllerScript card = eventData.pointerDrag.GetComponent<CardControllerScript>();
 
-        if(card && card.thisCard.canAttack && type == HeroType.ENEMY)
+        if(card && card.thisCard.canAttack && type == HeroType.ENEMY 
+            && !GameManagerScript.instance.enemyFieldCards.Exists(x => x.thisCard.isProvocation))
         {
             GameManagerScript.instance.DamageHero(card, true);
         }

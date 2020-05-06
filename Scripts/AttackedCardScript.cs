@@ -15,7 +15,11 @@ public class AttackedCardScript : MonoBehaviour, IDropHandler
 
         if(attacker && attacker.thisCard.canAttack && defender.thisCard.isPlaced)
         {
-            GameManagerScript.instance.CardsFight(attacker, defender);
+            if(GameManagerScript.instance.enemyFieldCards.Exists(x => x.thisCard.isProvocation) 
+                && !defender.thisCard.isProvocation)
+                return;
+            else
+                GameManagerScript.instance.CardsFight(attacker, defender);
         }
     }
 }
