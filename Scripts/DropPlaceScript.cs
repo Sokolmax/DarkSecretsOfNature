@@ -14,40 +14,36 @@ public enum FieldType
 
 public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    public FieldType Type;
+    public FieldType type;
 
     public void OnDrop(PointerEventData eventData)
     {
-        if(Type != FieldType.SELF_FIELD)
+        if(type != FieldType.SELF_FIELD)
             return;
 
-        CardMovementScript card = eventData.pointerDrag.GetComponent<CardMovementScript>();
+        CardControllerScript card = eventData.pointerDrag.GetComponent<CardControllerScript>();
 
-        if(card && card.GameManager.PlayerFieldCards.Count < 5/*карт на столе*/ && card.GameManager.IsPlayerTurn
-            && card.GameManager.PlayerEnergy >= card.GetComponent<CardInfoScript>().SelfCard.Cost 
-            && !card.GetComponent<CardInfoScript>().SelfCard.IsPlaced)
+        if(card && GameManagerScript.instance.isPlayerTurn
+            && GameManagerScript.instance.playerEnergy >= card.thisCard.cost
+            && !card.thisCard.isPlaced)
         { 
-            card.GameManager.PlayerHandCards.Remove(card.GetComponent<CardInfoScript>());
-            card.GameManager.PlayerFieldCards.Add(card.GetComponent<CardInfoScript>());
-            card.DefaultParent = transform;//изменение родителя карты при переносе
-
-            card.GetComponent<CardInfoScript>().SelfCard.IsPlaced = true;
-            card.GameManager.ReduceEnergy(true, card.GetComponent<CardInfoScript>().SelfCard.Cost);//отнимание маны
-            card.GameManager.CheckCardsForAvailability();
+            card.movement.defaultParent = transform;//изменение родителя карты при переносе
+            card.OnCast();
         }
+        
     }
 
     /*для перетягивания прототипа карты на позицию другого поля*/
     public void OnPointerEnter(PointerEventData eventData) // Наведение мыши на границу
     {
-        if(eventData.pointerDrag == null || Type == FieldType.ENEMY_FIELD 
-            || Type == FieldType.ENEMY_HAND || Type == FieldType.SELF_HAND)
+        if(eventData.pointerDrag == null || type == FieldType.ENEMY_FIELD 
+            || type == FieldType.ENEMY_HAND || type == FieldType.SELF_HAND)
             return;
 
         CardMovementScript card = eventData.pointerDrag.GetComponent<CardMovementScript>();
 
         if(card)
-            card.DefaultTempCardParent = transform;
+            card.defaultTempCardParent = transform;
     }
 
     public void OnPointerExit(PointerEventData eventData) // Отвод мыши от границы
@@ -57,7 +53,7 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
 
         CardMovementScript card = eventData.pointerDrag.GetComponent<CardMovementScript>();
 
-        if(card && card.DefaultTempCardParent == transform)
-            card.DefaultTempCardParent = card.DefaultParent;
+        if(card && card.defaultTempCardParent == transform)
+            card.defaultTempCardParent = card.defaultParent;
     }
 }

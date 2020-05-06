@@ -12,27 +12,26 @@ public class AttackedHeroScript : MonoBehaviour, IDropHandler
         PLAYER
     }
 
-    public HeroType Type;
-    public GameManagerScript GameManager;
-    public Color NormalCol, TurgetCol;
+    public HeroType type;
+    //public GameManagerScript GameManager;
+    public GameObject highlitedObj;
 
     public void OnDrop(PointerEventData eventData)
     {
-        if(!GameManager.IsPlayerTurn)
+        if(!GameManagerScript.instance.isPlayerTurn)
             return;
         
-        CardInfoScript card = eventData.pointerDrag.GetComponent<CardInfoScript>();
+        CardControllerScript card = eventData.pointerDrag.GetComponent<CardControllerScript>();
 
-        if(card && card.SelfCard.CanAttack && Type == HeroType.ENEMY)
+        if(card && card.thisCard.canAttack && type == HeroType.ENEMY)
         {
-            card.SelfCard.CanAttack = false;
-            GameManager.DamageHero(card, true);
+            GameManagerScript.instance.DamageHero(card, true);
         }
     }
 
     public void HighlightHero(bool highlite)
     {
-        GetComponent<Image>().color = highlite ? TurgetCol : NormalCol;
+        highlitedObj.SetActive(highlite);
     }
 
 }

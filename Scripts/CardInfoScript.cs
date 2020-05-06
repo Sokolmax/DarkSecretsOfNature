@@ -6,61 +6,56 @@ using TMPro;
 
 public class CardInfoScript : MonoBehaviour
 {
-    public Card SelfCard;
-    public Image Logo;
-    public Text Name, Attack, Helth;
-    public TextMeshProUGUI Cost;
-    public GameObject HideObj, HighlitedObj;
-    public bool IsPlayer;
-    //public Color NormalCol, TargetCol;
+    public CardControllerScript cardController;
+    //public Card SelfCard;
+    public Image logo;
+    public Text name, attack, helth;
+    public TextMeshProUGUI cost;
+    public GameObject hideObj, highlitedObj;
+    //public bool IsPlayer;
 
-    public void HideCardInfo(Card card) //скрытие руки соперника
+    public void HideCardInfo(/*Card card*/) //скрытие руки соперника
     {
-        SelfCard = card;
-        HideObj.SetActive(true);
-        Helth.text = "";
-        Attack.text = "";
-        Cost.text = "";
-        IsPlayer = false;
+        //SelfCard = card;
+        hideObj.SetActive(true);
+        helth.text = "";
+        attack.text = "";
+        cost.text = "";
+        //IsPlayer = false;
     }
 
-    public void ShowCardInfo(Card card, bool isPlayer)
+    public void ShowCardInfo(/*Card card, bool isPlayer*/)
     {
-        IsPlayer = isPlayer;
-        HideObj.SetActive(false);
-        SelfCard = card;
+        //IsPlayer = isPlayer;
+        hideObj.SetActive(false);
+        //SelfCard = card;
 
-        Logo.sprite = card.Logo;
-        Logo.preserveAspect = true;
-        Name.text = card.Name;
+        this.logo.sprite = cardController.thisCard.logo;
+        logo.preserveAspect = true;
+        name.text = cardController.thisCard.name;
 
         RefreshData();
     }
 
     public void RefreshData()
     {
-        Attack.text = SelfCard.Attack.ToString();
-        Helth.text = SelfCard.Helth.ToString();
-        Cost.text = SelfCard.Cost.ToString();
+        attack.text = cardController.thisCard.attack.ToString();
+        helth.text = cardController.thisCard.helth.ToString();
+        cost.text = cardController.thisCard.cost.ToString();
     }
 
-    public void HighlightCard() // включение подсветки
+    public void HighlightCard(bool highlight) // подсветка карт
     {
-        HighlitedObj.SetActive(true);
+        highlitedObj.SetActive(highlight);
     }
 
-    public void DeHighlightCard() // отключение подсветки
+    public void HighlightManaAvailability(int currentEnergy)//прозрачность карт, которые нельзя разыграть
     {
-        HighlitedObj.SetActive(false);
-    }
-
-    public void CheckForAvailability(int currentEnergy)//прозрачность карт, которые нельзя разыграть
-    {
-        GetComponent<CanvasGroup>().alpha = currentEnergy >= SelfCard.Cost ? 1: 0.7f; 
+        GetComponent<CanvasGroup>().alpha = currentEnergy >= cardController.thisCard.cost ? 1: 0.7f; 
     }
 
     public void HighlightAsTarget(bool highlite)// подсветка карт для атаки
     {
-        HighlitedObj.SetActive(highlite);
+        highlitedObj.SetActive(highlite);
     }
 }

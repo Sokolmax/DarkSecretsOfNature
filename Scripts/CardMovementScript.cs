@@ -7,94 +7,92 @@ using UnityEngine.UI;
 
 public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    Camera MainCamera;
+    public CardControllerScript cardController;
+
+    Camera main_Camera;
     Vector3 offset;
-    public Transform DefaultParent, DefaultTempCardParent;
-    GameObject TempCardGO;
-    public GameManagerScript GameManager; // для проверки хода
-    public bool IsDraggable; //проверка на возможность перетягивания карты по другим полям
+    public Transform defaultParent, defaultTempCardParent;
+    GameObject temp_Card_GO;
+    //public GameManagerScript GameManager; // для проверки хода
+    public bool isDraggable; //проверка на возможность перетягивания карты по другим полям
 
     void Awake() // or start
     {
-        MainCamera = Camera.allCameras[0];
-        TempCardGO = GameObject.Find("TempCardGO");
-        GameManager = FindObjectOfType<GameManagerScript>();
+        main_Camera = Camera.allCameras[0];
+        temp_Card_GO = GameObject.Find("TempCardGO");
     }
 
     public void OnBeginDrag(PointerEventData eventData) // начало движения карты
     {
-        offset = transform.position - MainCamera.ScreenToWorldPoint(eventData.position);
+        //return;
+        offset = transform.position - main_Camera.ScreenToWorldPoint(eventData.position);
 
-        DefaultParent = DefaultTempCardParent = transform.parent;
-
-        IsDraggable = GameManager.IsPlayerTurn && 
-                      (
-                      (DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_HAND 
-                      && GameManager.PlayerEnergy >= GetComponent<CardInfoScript>().SelfCard.Cost)
-                      || (DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_FIELD
-                      && GetComponent<CardInfoScript>().SelfCard.CanAttack)
-                      );
+        defaultParent = defaultTempCardParent = transform.parent;
         
-                    /*(DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_HAND ||
-                      DefaultParent.GetComponent<DropPlaceScript>().Type == FieldType.SELF_FIELD)
-                      && GameManager.IsPlayerTurn;*/
+        isDraggable = GameManagerScript.instance.isPlayerTurn &&
+                      (
+                      (defaultParent.GetComponent<DropPlaceScript>().type == FieldType.SELF_HAND &&
+                       GameManagerScript.instance.playerEnergy >= cardController.thisCard.cost) ||
+                      (defaultParent.GetComponent<DropPlaceScript>().type == FieldType.SELF_FIELD &&
+                       cardController.thisCard.canAttack)
+                      );
 
-        if(!IsDraggable)
+        if(!isDraggable)
             return;
 
-        if(GetComponent<CardInfoScript>().SelfCard.CanAttack)
-            GameManager.HighlightTargets(true);
+        if(cardController.thisCard.canAttack)
+            GameManagerScript.instance.HighlightTargets(true);
         
-        TempCardGO.transform.SetParent(DefaultParent);
-        TempCardGO.transform.SetSiblingIndex(transform.GetSiblingIndex());
+        temp_Card_GO.transform.SetParent(defaultParent);
+        temp_Card_GO.transform.SetSiblingIndex(transform.GetSiblingIndex());
 
-        transform.SetParent(DefaultParent.parent);
+        transform.SetParent(defaultParent.parent);
         GetComponent<CanvasGroup>().blocksRaycasts = false;
     }
 
     public void OnDrag(PointerEventData eventData) // движение
     {
-        if(!IsDraggable)
+        if(!isDraggable)
             return;
 
-        Vector3 newPos = MainCamera.ScreenToWorldPoint(eventData.position);
+        Vector3 newPos = main_Camera.ScreenToWorldPoint(eventData.position);
         transform.position = newPos + offset;
 
-        if(TempCardGO.transform.parent != DefaultTempCardParent)
-            TempCardGO.transform.SetParent(DefaultTempCardParent);
+        if(temp_Card_GO.transform.parent != defaultTempCardParent)
+            temp_Card_GO.transform.SetParent(defaultTempCardParent);
             
-        if(DefaultParent.GetComponent<DropPlaceScript>().Type != FieldType.SELF_FIELD) //запрет перемещения карт по полю    
+        if(defaultParent.GetComponent<DropPlaceScript>().type != FieldType.SELF_FIELD) //запрет перемещения карт по полю    
             CheckPosition(); 
     }
 
     public void OnEndDrag(PointerEventData eventData) // отпускание карты
     {
-        if(!IsDraggable)
+        if(!isDraggable)
             return;
 
-         GameManager.HighlightTargets(false);
+        GameManagerScript.instance.HighlightTargets(false);
 
-        transform.SetParent(DefaultParent);
+        transform.SetParent(defaultParent);
         GetComponent<CanvasGroup>().blocksRaycasts = true;
 
         // замена позиции карты на позицию прототипа
-        transform.SetSiblingIndex(TempCardGO.transform.GetSiblingIndex()); 
-        TempCardGO.transform.SetParent(GameObject.Find("Canvas").transform);
-        TempCardGO.transform.localPosition = new Vector3(800, 0);
+        transform.SetSiblingIndex(temp_Card_GO.transform.GetSiblingIndex()); 
+        temp_Card_GO.transform.SetParent(GameObject.Find("Canvas").transform);
+        temp_Card_GO.transform.localPosition = new Vector3(800, 0);
     }
 
 
     void CheckPosition() // для замены и запоминание позиции карты через прототип
     {
-        int newIndex = DefaultTempCardParent.childCount;
+        int newIndex = defaultTempCardParent.childCount;
 
-        for(int i = 0; i < DefaultTempCardParent.childCount; i++)
+        for(int i = 0; i < defaultTempCardParent.childCount; i++)
         {
-            if(transform.position.x < DefaultTempCardParent.GetChild(i).position.x)
+            if(transform.position.x < defaultTempCardParent.GetChild(i).position.x)
             {
                 newIndex = i;
 
-                if(TempCardGO.transform.GetSiblingIndex() < newIndex)
+                if(temp_Card_GO.transform.GetSiblingIndex() < newIndex)
                 {
                     newIndex--;
                 }
@@ -102,7 +100,7 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
             }
         }
 
-        TempCardGO.transform.SetSiblingIndex(newIndex);
+        temp_Card_GO.transform.SetSiblingIndex(newIndex);
     }
 
     public void MoveToField(Transform field)//плавный розыгрыш карты
