@@ -34,6 +34,12 @@ public class CardInfoScript : MonoBehaviour
         logo.preserveAspect = true;
         name.text = cardController.thisCard.name;
 
+        if(cardController.thisCard.isSpell)
+        {
+            attack.gameObject.SetActive(false);
+            helth.gameObject.SetActive(false);
+        }
+
         RefreshData();
     }
 

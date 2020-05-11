@@ -16,6 +16,7 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
     //public GameManagerScript GameManager; // для проверки хода
     public bool isDraggable; //проверка на возможность перетягивания карты по другим полям
 
+    int startID; //факс перемещения карт в руке
     void Awake() // or start
     {
         main_Camera = Camera.allCameras[0];
@@ -39,6 +40,8 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
 
         if(!isDraggable)
             return;
+
+        startID = transform.GetSiblingIndex();
 
         if(cardController.thisCard.isSpell || cardController.thisCard.canAttack)
             GameManagerScript.instance.HighlightTargets(cardController, true);
@@ -101,6 +104,9 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
                 break;
             }
         }
+
+        if(temp_Card_GO.transform.parent == defaultParent)
+            newIndex = startID;
 
         temp_Card_GO.transform.SetSiblingIndex(newIndex);
     }

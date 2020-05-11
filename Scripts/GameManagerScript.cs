@@ -19,8 +19,14 @@ public class Game
     {
         List<Card> list = new List<Card>();
         for(int i = 0; i < 15/*карты в колоде*/; i++)
-            list.Add(CardManager.allCards[Random.Range(0, CardManager.allCards.Count)].GetCopy());
-        
+        {
+            var card = CardManager.allCards[Random.Range(0, CardManager.allCards.Count)];
+
+            if(card.isSpell)
+                list.Add(((SpellCard)card).GetCopy());
+            else
+                list.Add(card.GetCopy());
+        }
         return list;
     }
 }
@@ -46,6 +52,8 @@ public class GameManagerScript : MonoBehaviour
 
     public AttackedHeroScript enemyHero, playerHero;
 
+    public AI enemyAI; 
+
     public List<CardControllerScript> playerHandCards = new List<CardControllerScript>(),
                                 playerFieldCards = new List<CardControllerScript>(),
                                 enemyHandCards = new List<CardControllerScript>(),
@@ -70,7 +78,7 @@ public class GameManagerScript : MonoBehaviour
 
         GiveHandCards(currentGame.enemyDeck, enemyHand);
         GiveHandCards(currentGame.playerDeck, playerHand);
-        playerEnergy = enemyEnergy = 10000;
+        playerEnergy = enemyEnergy = 10;
         playerHP = enemyHP = 20000;
 
         ShowEnergy();
@@ -148,77 +156,19 @@ public class GameManagerScript : MonoBehaviour
                 card.ability.OnNewTurn();
             }
 
-            StartCoroutine(EnemyTurn(enemyHandCards));
+            enemyAI.MakeTurn();
+
+            while(turnTime --> 0)
+            {
+                turnTimeText.text = turnTime.ToString();
+                yield return new WaitForSeconds(1);
+            }
+            ChangeTurn();
         }
         
     }
 
-    IEnumerator EnemyTurn(List<CardControllerScript> cards)
-    {
-        yield return new WaitForSeconds(1);
-
-        int count = Random.Range(0, cards.Count + 1);
-
-        for(int i = 0; i < count; i++) //выставление карт соперником для проверки
-        {
-            if (enemyFieldCards.Count > 4/*баг с выкладыванием бльшего кол-ва карт*/ || enemyEnergy == 0
-                || enemyHandCards.Count == 0)
-                break;
-
-            List<CardControllerScript> cardsList = cards.FindAll(x => enemyEnergy >= x.thisCard.cost && !x.thisCard.isSpell); //карты с подходящей ценой в руке
-
-            if(cardsList.Count == 0)
-                break;
-
-            cardsList[0].GetComponent<CardMovementScript>().MoveToField(enemyField);
-
-            yield  return new WaitForSeconds(0.51f);
-
-            cardsList[0].transform.SetParent(enemyField);
-
-            cardsList[0].OnCast();
-        }
-
-        yield  return new WaitForSeconds(1);
-
-        while(enemyFieldCards.Exists(x => x.thisCard.canAttack)) // атака соперником для проверки
-        {
-            var activeCard = enemyFieldCards.FindAll(x => x.thisCard.canAttack)[0];
-            bool hasProvocation  = playerFieldCards.Exists(x => x.thisCard.isProvocation);
-
-            if(hasProvocation || Random.Range(0, 2) == 0 && playerFieldCards.Count > 0)
-            {
-                CardControllerScript enemy;
-
-                if(hasProvocation)
-                    enemy = playerFieldCards.Find(x => x.thisCard.isProvocation);
-                else
-                    enemy = playerFieldCards[Random.Range(0, playerFieldCards.Count)];
-
-                //Debug.Log(activeCard.SelfCard.Name);
-
-                activeCard.thisCard.canAttack = false;
-
-                activeCard.movement.MoveToTurget(enemy.transform);
-                yield return new WaitForSeconds(.75f);
-
-                CardsFight(enemy, activeCard);
-            }
-            else
-            {
-                activeCard.thisCard.canAttack = false;
-
-                activeCard.GetComponent<CardMovementScript>().MoveToTurget(playerHero.transform);
-                yield return new WaitForSeconds(.75f);
-
-                DamageHero(activeCard, false);
-            }
-            yield return new WaitForSeconds(.2f);
-        }
-        yield return new WaitForSeconds(1);
-        ChangeTurn();
-    }
-
+    
     public void ChangeTurn() //смена хода
     {
         StopAllCoroutines();
@@ -253,13 +203,11 @@ public class GameManagerScript : MonoBehaviour
 
     public void CardsFight(CardControllerScript attacker, CardControllerScript defender)
     {
-        defender.thisCard.GetDamage(attacker.thisCard.attack);
-        
         attacker.OnDamageDeal();
           
         defender.OnTakeDamage();
         attacker.OnTakeDamage();
-        
+        defender.thisCard.GetDamage(attacker.thisCard.attack);
         attacker.thisCard.GetDamage(defender.thisCard.attack);
 
         defender.CheckForAlive();
@@ -330,9 +278,11 @@ public class GameManagerScript : MonoBehaviour
 
         if(attacker.thisCard.isSpell)
         {
-            if(attacker.thisCard.spellTarget == Card.TargetType.NO_TARGET)
+            var spellCard = (SpellCard)attacker.thisCard;
+
+            if(spellCard.spellTarget == SpellCard.TargetType.NO_TARGET)
                 targets = new List<CardControllerScript>();
-            else if(attacker.thisCard.spellTarget == Card.TargetType.ALLY_CARD_TARGET)
+            else if(spellCard.spellTarget == SpellCard.TargetType.ALLY_CARD_TARGET)
                 targets = playerFieldCards;
             else
                 targets = enemyFieldCards;

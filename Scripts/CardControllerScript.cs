@@ -33,7 +33,7 @@ public class CardControllerScript : MonoBehaviour
 
     public void OnCast()//каст
     {
-        if(thisCard.isSpell && thisCard.spellTarget != Card.TargetType.NO_TARGET)
+        if(thisCard.isSpell && ((SpellCard)thisCard).spellTarget != SpellCard.TargetType.NO_TARGET)
             return;
 
         if(isPlayerCard)
@@ -79,9 +79,11 @@ public class CardControllerScript : MonoBehaviour
 
     public void UseSpell(CardControllerScript target)
     {
-        switch(thisCard.spell)
+        var spellCard = (SpellCard)thisCard;
+
+        switch(spellCard.spell)
         {
-            case Card.SpellType.ADD_PROVOCATION: //добавление провокиции
+            case SpellCard.SpellType.ADD_PROVOCATION: //добавление провокиции
                 if(!target.thisCard.isProvocation)
                 {
                     target.thisCard.abilities.Add(Card.AbilityType.PROVOCATION);
@@ -90,60 +92,60 @@ public class CardControllerScript : MonoBehaviour
             break;
 
 
-            case Card.SpellType.DAMAGE_CARD: //урон одной карте
-                GiveDamageTo(target, thisCard.spellValue);
+            case SpellCard.SpellType.DAMAGE_CARD: //урон одной карте
+                GiveDamageTo(target, spellCard.spellValue);
             break;
 
 
-            case Card.SpellType.DAMAGE_CARDS: //урон всем картам соперника
+            case SpellCard.SpellType.DAMAGE_CARDS: //урон всем картам соперника
                 var enemyCards = isPlayerCard ?
                                  new List<CardControllerScript>(gameManager.enemyFieldCards):
                                  new List<CardControllerScript>(gameManager.playerFieldCards);
                 
                 foreach(var card in enemyCards)
-                    GiveDamageTo(card, thisCard.spellValue);
+                    GiveDamageTo(card, spellCard.spellValue);
             break;
 
 
-            case Card.SpellType.DAMAGE_HERO: //урон герою
+            case SpellCard.SpellType.DAMAGE_HERO: //урон герою
                 if(isPlayerCard)
-                    gameManager.enemyHP -= thisCard.spellValue;
+                    gameManager.enemyHP -= spellCard.spellValue;
                 else
-                    gameManager.playerHP -= thisCard.spellValue;
+                    gameManager.playerHP -= spellCard.spellValue;
                 
                 gameManager.ShowHP();
                 gameManager.CheckForResult();
             break;
 
 
-            case Card.SpellType.DESTROY_CARD: //уничтожение карты
+            case SpellCard.SpellType.DESTROY_CARD: //уничтожение карты
                 GiveDamageTo(target, target.thisCard.helth);
             break;
 
 
-            case Card.SpellType.HEAL_CARD: //хилл одной карты
-                target.thisCard.helth += thisCard.spellValue;
+            case SpellCard.SpellType.HEAL_CARD: //хилл одной карты
+                target.thisCard.helth += spellCard.spellValue;
             break;
 
 
-            case Card.SpellType.HEAL_CARDS: //хилл всех своих карт
+            case SpellCard.SpellType.HEAL_CARDS: //хилл всех своих карт
                 var allyCards = isPlayerCard ? 
                                 gameManager.playerFieldCards : 
                                 gameManager.enemyFieldCards;
 
                 foreach(var card in allyCards)
                 {
-                    card.thisCard.helth += thisCard.spellValue;
+                    card.thisCard.helth += spellCard.spellValue;
                     card.info.RefreshData();
                 } 
             break;
 
 
-            case Card.SpellType.HEAL_HERO: //хилл героя
+            case SpellCard.SpellType.HEAL_HERO: //хилл героя
                 if(isPlayerCard)
-                    gameManager.playerHP += thisCard.spellValue;
+                    gameManager.playerHP += spellCard.spellValue;
                 else
-                    gameManager.enemyHP += thisCard.spellValue;
+                    gameManager.enemyHP += spellCard.spellValue;
                 
                 gameManager.ShowHP();
             break;

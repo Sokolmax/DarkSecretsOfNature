@@ -13,11 +13,13 @@ public class SpellTarget : MonoBehaviour, IDropHandler
         CardControllerScript spell = eventData.pointerDrag.GetComponent<CardControllerScript>(),
                              target = GetComponent<CardControllerScript>();
 
-        if(spell && spell.isPlayerCard && target.thisCard.isPlaced 
+        if(spell && spell.thisCard.isSpell && spell.isPlayerCard && target.thisCard.isPlaced 
             && GameManagerScript.instance.playerEnergy >= spell.thisCard.cost)
         {
-            if((spell.thisCard.spellTarget == Card.TargetType.ALLY_CARD_TARGET && target.isPlayerCard)
-                || spell.thisCard.spellTarget == Card.TargetType.ENEMY_CARD_TARGET && !target.isPlayerCard)
+            var spellCard = (SpellCard)spell.thisCard;
+
+            if((spellCard.spellTarget == SpellCard.TargetType.ALLY_CARD_TARGET && target.isPlayerCard)
+                || spellCard.spellTarget == SpellCard.TargetType.ENEMY_CARD_TARGET && !target.isPlayerCard)
             {
                 GameManagerScript.instance.ReduceEnergy(true, spell.thisCard.cost);
                 spell.UseSpell(target);
