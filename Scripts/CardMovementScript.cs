@@ -40,8 +40,8 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
         if(!isDraggable)
             return;
 
-        if(cardController.thisCard.canAttack)
-            GameManagerScript.instance.HighlightTargets(true);
+        if(cardController.thisCard.isSpell || cardController.thisCard.canAttack)
+            GameManagerScript.instance.HighlightTargets(cardController, true);
         
         temp_Card_GO.transform.SetParent(defaultParent);
         temp_Card_GO.transform.SetSiblingIndex(transform.GetSiblingIndex());
@@ -57,12 +57,14 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
 
         Vector3 newPos = main_Camera.ScreenToWorldPoint(eventData.position);
         transform.position = newPos + offset;
-
-        if(temp_Card_GO.transform.parent != defaultTempCardParent)
-            temp_Card_GO.transform.SetParent(defaultTempCardParent);
-            
-        if(defaultParent.GetComponent<DropPlaceScript>().type != FieldType.SELF_FIELD) //запрет перемещения карт по полю    
-            CheckPosition(); 
+        if(!cardController.thisCard.isSpell)
+        {
+            if(temp_Card_GO.transform.parent != defaultTempCardParent)
+                temp_Card_GO.transform.SetParent(defaultTempCardParent);
+                
+            if(defaultParent.GetComponent<DropPlaceScript>().type != FieldType.SELF_FIELD) //запрет перемещения карт по полю    
+                CheckPosition();
+        }
     }
 
     public void OnEndDrag(PointerEventData eventData) // отпускание карты
@@ -70,7 +72,7 @@ public class CardMovementScript : MonoBehaviour, IBeginDragHandler, IDragHandler
         if(!isDraggable)
             return;
 
-        GameManagerScript.instance.HighlightTargets(false);
+        GameManagerScript.instance.HighlightTargets(cardController, false);
 
         transform.SetParent(defaultParent);
         GetComponent<CanvasGroup>().blocksRaycasts = true;

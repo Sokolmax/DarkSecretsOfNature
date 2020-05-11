@@ -23,11 +23,13 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
 
         CardControllerScript card = eventData.pointerDrag.GetComponent<CardControllerScript>();
 
-        if(card && GameManagerScript.instance.isPlayerTurn
+        if(card && GameManagerScript.instance.playerFieldCards.Count < 5 && GameManagerScript.instance.isPlayerTurn
             && GameManagerScript.instance.playerEnergy >= card.thisCard.cost
             && !card.thisCard.isPlaced)
         { 
-            card.movement.defaultParent = transform;//изменение родителя карты при переносе
+            if(!card.thisCard.isSpell)
+                card.movement.defaultParent = transform;//изменение родителя карты при переносе
+                
             card.OnCast();
         }
         

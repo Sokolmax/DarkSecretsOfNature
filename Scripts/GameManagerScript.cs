@@ -13,19 +13,13 @@ public class Game
     {
         enemyDeck = GiveDeckCard();
         playerDeck = GiveDeckCard();
-
-        //EnemyHand = new List<Card>();
-        //PlayerHand = new List<Card>();
-
-        //EnemyField = new List<Card>();
-        //PlayerField = new List<Card>();
     }
 
     List<Card> GiveDeckCard()
     {
         List<Card> list = new List<Card>();
         for(int i = 0; i < 15/*карты в колоде*/; i++)
-            list.Add(CardManager.allCards[Random.Range(0, CardManager.allCards.Count)]);
+            list.Add(CardManager.allCards[Random.Range(0, CardManager.allCards.Count)].GetCopy());
         
         return list;
     }
@@ -76,7 +70,7 @@ public class GameManagerScript : MonoBehaviour
 
         GiveHandCards(currentGame.enemyDeck, enemyHand);
         GiveHandCards(currentGame.playerDeck, playerHand);
-        playerEnergy = enemyEnergy = 20;
+        playerEnergy = enemyEnergy = 10000;
         playerHP = enemyHP = 20000;
 
         ShowEnergy();
@@ -167,11 +161,11 @@ public class GameManagerScript : MonoBehaviour
 
         for(int i = 0; i < count; i++) //выставление карт соперником для проверки
         {
-            if (enemyFieldCards.Count > 5/*баг с выкладыванием бльшего кол-ва карт*/ || enemyEnergy == 0
+            if (enemyFieldCards.Count > 4/*баг с выкладыванием бльшего кол-ва карт*/ || enemyEnergy == 0
                 || enemyHandCards.Count == 0)
                 break;
 
-            List<CardControllerScript> cardsList = cards.FindAll(x => enemyEnergy >= x.thisCard.cost); //карты с подходящей ценой в руке
+            List<CardControllerScript> cardsList = cards.FindAll(x => enemyEnergy >= x.thisCard.cost && !x.thisCard.isSpell); //карты с подходящей ценой в руке
 
             if(cardsList.Count == 0)
                 break;
@@ -233,7 +227,7 @@ public class GameManagerScript : MonoBehaviour
 
         if(isPlayerTurn)
         {
-            playerEnergy += turn/2*10;
+            playerEnergy += turn/2*5;
 
             if(playerHandCards.Count < 5/*макс. кол-во карт в руке*/)
                 GiveCardToHand(currentGame.playerDeck, playerHand);
@@ -241,7 +235,7 @@ public class GameManagerScript : MonoBehaviour
         }
         else
         {
-            enemyEnergy += turn/2*10;
+            enemyEnergy += turn/2*5;
 
             if(enemyHandCards.Count < 5/*макс. кол-во карт в руке*/)
             GiveCardToHand(currentGame.enemyDeck, enemyHand);
@@ -260,11 +254,12 @@ public class GameManagerScript : MonoBehaviour
     public void CardsFight(CardControllerScript attacker, CardControllerScript defender)
     {
         defender.thisCard.GetDamage(attacker.thisCard.attack);
-
+        
         attacker.OnDamageDeal();
-        defender.OnTakeDamage(attacker);
+          
+        defender.OnTakeDamage();
         attacker.OnTakeDamage();
-
+        
         attacker.thisCard.GetDamage(defender.thisCard.attack);
 
         defender.CheckForAlive();
@@ -278,7 +273,7 @@ public class GameManagerScript : MonoBehaviour
         enemyEnergyTxt.text = enemyEnergy.ToString();
     }
 
-    void ShowHP()
+    public void ShowHP()
     {
         playerHPTxt.text = playerHP.ToString();
         enemyHPTxt.text = enemyHP.ToString();
@@ -306,7 +301,7 @@ public class GameManagerScript : MonoBehaviour
         CheckForResult();
     }
 
-    void CheckForResult()
+    public void CheckForResult()
     {
         if(enemyHP <= 0)
         {
@@ -329,18 +324,28 @@ public class GameManagerScript : MonoBehaviour
             card.info.HighlightManaAvailability(playerEnergy);
     }
 
-    public void HighlightTargets(bool highlight)// подсветка карт для атаки
+    public void HighlightTargets(CardControllerScript attacker, bool highlight)// подсветка карт для атаки
     {
         List<CardControllerScript> targets = new List<CardControllerScript>();
 
-        if(enemyFieldCards.Exists(x => x.thisCard.isProvocation))
-            targets = enemyFieldCards.FindAll(x => x.thisCard.isProvocation);
-        else
+        if(attacker.thisCard.isSpell)
         {
-            targets = enemyFieldCards;
-            enemyHero.HighlightHero(highlight);
+            if(attacker.thisCard.spellTarget == Card.TargetType.NO_TARGET)
+                targets = new List<CardControllerScript>();
+            else if(attacker.thisCard.spellTarget == Card.TargetType.ALLY_CARD_TARGET)
+                targets = playerFieldCards;
+            else
+                targets = enemyFieldCards;
         }
-
+        else{
+            if(enemyFieldCards.Exists(x => x.thisCard.isProvocation))
+                targets = enemyFieldCards.FindAll(x => x.thisCard.isProvocation);
+            else
+            {
+                targets = enemyFieldCards;
+                enemyHero.HighlightHero(highlight);
+            }
+        }
         foreach(var card in targets)
             card.info.HighlightAsTarget(highlight);
         

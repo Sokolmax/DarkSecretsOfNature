@@ -6,7 +6,7 @@ public class CardAbility : MonoBehaviour
 {
     public CardControllerScript cardController;
 
-    public GameObject shield, provocation;
+    public GameObject provocation;
 
     public void OnCast()
     {
@@ -19,10 +19,6 @@ public class CardAbility : MonoBehaviour
 
                     if(cardController.isPlayerCard)
                         cardController.info.HighlightCard(true);
-                break;
-
-                case Card.AbilityType.SHIELD:
-                    shield.SetActive(true);
                 break;
 
                 case Card.AbilityType.PROVOCATION:
@@ -57,18 +53,6 @@ public class CardAbility : MonoBehaviour
 
     public void OnDamageTake()
     {
-        shield.SetActive(false);
-        /*foreach(var ability in cardController.thisCard.abilities)
-        {
-            switch(ability)
-            {
-                case Card.AbilityType.SHIELD:
-                    shield.SetActive(true);
-                break;
-                    
-            }
-
-        }*/
     }
 
     public void OnNewTurn()

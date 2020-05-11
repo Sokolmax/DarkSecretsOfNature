@@ -58,4 +58,6 @@ public class CardInfoScript : MonoBehaviour
     {
         highlitedObj.SetActive(highlite);
     }
+
+    
 }
